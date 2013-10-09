@@ -432,20 +432,18 @@ class Mixer(object):
         self.led_complete()
         t = int(time())
 
+        newURL = ""
+        ""
         # Now, put up a window showing any additional steps that are needed to make this drink
         if len(offlineIngredients) > 0:
             print "There are offline ingredients %s" % offlineIngredients
 
-            newURL = "/ws/showingredients/" + str(id) + "?" + '&'.join( [ "booze%d=%d" % ( i[ 'booze' ], i[ 'ml' ] ) for i in offlineIngredients ] )
+            newURL = "REDIRECT /ws/showingredients/" + str(id) + "?" + '&'.join( [ "booze%d=%d" % ( i[ 'booze' ], i[ 'ml' ] ) for i in offlineIngredients ] )
             print "n=%s" % newURL
 
         dlog = drink_log.DrinkLog(drink.id, t, size)
         db.session.add(dlog)
         db.session.commit()
-
-
-        
-
 
         if app.options.use_liquid_level_sensors:
             self.check_liquid_levels()
@@ -453,7 +451,7 @@ class Mixer(object):
         FlashGreenLeds(self).start()
         self.unlock_bartendro()
 
-        return "" 
+        return newURL
 
     def clean(self):
         CleanCycle(self).start()

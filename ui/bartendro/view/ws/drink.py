@@ -19,6 +19,11 @@ def ws_make_drink(drink, recipe, speed = 255):
         raise InternalServerError
     try:
         err = app.mixer.make_drink(drink, recipe, speed)
+        
+        print "err=%s" % err
+        
+        if err.startswith("REDIRECT"):
+            return err
         if not err:
             return "ok\n"
         else:
