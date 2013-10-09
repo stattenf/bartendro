@@ -57,7 +57,7 @@ app.options = load_options()
 
 try: 
     app.software_only = args.software_only or int(os.environ['BARTENDRO_SOFTWARE_ONLY'])
-    app.num_dispensers = 15
+    app.num_dispensers = 7
 except KeyError:
     app.software_only = 0
 

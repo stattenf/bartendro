@@ -196,6 +196,9 @@ class Mixer(object):
                                                          FROM booze_group_booze bgb, dispenser 
                                                         WHERE bgb.booze_id = dispenser.booze_id)""")
 
+        offline_boozes = db.session.query("id") \
+                                .from_statement("""SELECT bg.id FROM booze bg WHERE bg.offline > 0""")
+
         if app.options.use_liquid_level_sensors: 
             sql = "SELECT booze_id FROM dispenser WHERE out == 0 ORDER BY id LIMIT :d"
         else:
@@ -205,7 +208,8 @@ class Mixer(object):
                         .from_statement(sql) \
                         .params(d=self.disp_count).all()
         boozes.extend(add_boozes)
-
+        boozes.extend(offline_boozes)
+        
         booze_dict = {}
         for booze_id in boozes:
             booze_dict[booze_id[0]] = 1
@@ -280,8 +284,63 @@ class Mixer(object):
         self.unlock_bartendro()
         return (0, "")
 
+    def find_dispenser(self, booze_id ):
+        # Find the dispenser for this booze
+        dispensers = Dispenser.query.order_by(Dispenser.id).all()
+
+        for i in xrange(self.disp_count):
+            disp = dispensers[i]
+
+            # if we're out of booze, don't consider this drink
+            if app.options.use_liquid_level_sensors and disp.out: 
+                log.info("Dispenser %d is out of booze. Cannot make this drink." % (i+1))
+                continue
+
+            if booze_id == disp.booze_id:
+                return disp
+        
+        return None
+        
+    def get_booze_name( self, booze_id ):
+        drinks = db.session.query( "name") \
+                        .from_statement("SELECT db.name FROM booze db WHERE db.id = :id").params( id = booze_id ).all()
+                        
+        print( "get_booze_name(%d, %s)" % ( booze_id, drinks ) )
+        
+        return drinks[0]
+
+    def get_drink_name( self, drink_id ):
+            
+        return Drink.query.filter_by(id=int(drink_id)).first()
+            
+
+    def get_ingredients_for_drink( self, id, recipe_arg ):
+        results = [ ]
+        
+        print "show_ingredients, id=%d args=%s" % ( id, recipe_arg )
+        
+        drink = Drink.query.filter_by(id=int(id)).first()
+        print( "recipe_arg = %s" % str( recipe_arg ) )
+
+        for booze in recipe_arg:
+            booze_id = int(booze[5:])
+        
+            r = {}
+                                    
+            r['booze'] = booze_id
+            r['ml'] = recipe_arg[booze]
+            r['name'] = self.get_booze_name( booze_id )
+
+            results.append( r )
+
+        print "get_ingredients, results=%s for recipe=%s" % ( results, recipe_arg )
+
+        return results
+        
+
     def make_drink(self, id, recipe_arg, speed = 255):
-        log.debug("Make drink state: %d" % self.get_state())
+        log.debug("Make drink state: %d id=%d recipe_arg=%s speed=%d" % ( self.get_state(), id, recipe_arg, speed ) )
+        print "Make drink state: %d id=%d recipe_arg=%s speed=%d" % ( self.get_state(), id, recipe_arg, speed )
         if self.get_state() == STATE_ERROR:
             return "Cannot make a drink. Bartendro has encountered some error and is stopped. :("
         log.info("State ok! making drink!")
@@ -290,41 +349,59 @@ class Mixer(object):
         self.check_liquid_levels()
 
         drink = Drink.query.filter_by(id=int(id)).first()
-        dispensers = Dispenser.query.order_by(Dispenser.id).all()
 
+        print( "recipe_arg = %s" % str( recipe_arg ) )
+        
         recipe = []
         size = 0
+                
         for booze in recipe_arg:
-            r = None
             booze_id = int(booze[5:])
-            for i in xrange(self.disp_count):
-                disp = dispensers[i]
-
-                # if we're out of booze, don't consider this drink
-                if app.options.use_liquid_level_sensors and disp.out: 
-                    log.info("Dispenser %d is out of booze. Cannot make this drink." % (i+1))
-                    continue
-
-                if booze_id == disp.booze_id:
-                    r = {}
-                    r['dispenser'] = disp.id
-                    r['dispenser_actual'] = disp.actual
-                    r['booze'] = booze_id
-                    r['ml'] = recipe_arg[booze]
-                    size += r['ml']
-                    break
-            if not r:
-                return "Cannot make drink. I don't have the required booze: %d" % booze_id
-            recipe.append(r)
-
+            
+            r = {}
+            
+            r['booze'] = booze_id
+            r['ml'] = recipe_arg[booze]
+            r['name'] = self.get_booze_name( booze_id )
+            size += r['ml']
+            
+            # Find the dispenser for this booze
+            disp = self.find_dispenser( booze_id )
+            
+            if disp != None:
+                r['dispenser'] = disp.id
+                r['dispenser_actual'] = disp.actual
+            else:
+                r['offline'] = 1
+                
+            recipe.append( r )
+                                
         locked = self.lock_bartendro()
         if not locked: raise BartendroBusyError
    
+        # Calculate the 'offline' ingredients
+        log.debug("recipe = %s" % str( recipe ) )
+        print( "recipe = %s" % str( recipe ) )
+        
+        offlineIngredients = []
+        for r in recipe:
+            if not 'dispenser' in r:
+                offlineIngredients.append( r )
+        
+        print( "OFFLINE ingredients: %s" % str( offlineIngredients ) )
+        
+        #   THIS SHOULD PUT UP A DIALOG DESCRIBING THE NECESSARY INGREDIENTS
+        
+        
+        #   DISPENSE THE INGREDIENTS
         self.led_dispense()
         dur = 0
         active_disp = []
         ticks = []
         for r in recipe:
+            if not 'dispenser' in r:
+                continue
+            
             if r['dispenser_actual'] == 0:
                 r['ms'] = int(r['ml'] * TICKS_PER_ML)
             else:
@@ -353,11 +430,22 @@ class Mixer(object):
             return "One of the pumps did not operate properly. Your drink is broken. Sorry. :("
 
         self.led_complete()
-
         t = int(time())
+
+        # Now, put up a window showing any additional steps that are needed to make this drink
+        if len(offlineIngredients) > 0:
+            print "There are offline ingredients %s" % offlineIngredients
+
+            newURL = "/ws/showingredients/" + str(id) + "?" + '&'.join( [ "booze%d=%d" % ( i[ 'booze' ], i[ 'ml' ] ) for i in offlineIngredients ] )
+            print "n=%s" % newURL
+
         dlog = drink_log.DrinkLog(drink.id, t, size)
         db.session.add(dlog)
         db.session.commit()
+
+
+        
+
 
         if app.options.use_liquid_level_sensors:
             self.check_liquid_levels()

@@ -4,7 +4,8 @@ from time import sleep
 from operator import itemgetter
 from bartendro import app, db, mixer
 from bartendro.global_lock import STATE_ERROR
-from flask import Flask, request
+from flask import Flask, request, redirect, render_template
+
 from flask.ext.login import login_required, current_user
 from werkzeug.exceptions import ServiceUnavailable, BadRequest, InternalServerError
 from bartendro.model.drink import Drink
@@ -24,6 +25,32 @@ def ws_make_drink(drink, recipe, speed = 255):
             raise BadRequest(err)
     except mixer.BartendroBusyError:
         raise ServiceUnavailable("busy")
+
+def ws_show_drink_ingredients( drink_id, recipe ):
+    
+    drinkName=app.mixer.get_drink_name(drink_id)
+
+    # Step thru each booze in the recipe, and create an entry for it
+    print "recipe=%s" % str(recipe)
+    print "drink=%s" % str(drinkName)
+
+    ingredients = []
+    for i in recipe:
+        booze = app.mixer.get_booze_name( int(i[5:]) )
+        
+        if booze:
+            ingredients.append( { 'name':booze, 'ml':recipe[ i ] } )        
+        
+    t = render_template("drink/ingredients",
+                            drink=drinkName,
+                           ingredients=ingredients, 
+                           options=app.options,
+                           other_drinks=[],
+                           title="Bartendro")
+    
+    return t
+    
+
 
 @app.route('/ws/drink/<int:drink>')
 def ws_drink(drink):
@@ -164,3 +191,14 @@ def ws_shotbot(disp):
         return "busy"
 
     return ""
+
+@app.route('/ws/showingredients/<int:drink>')
+def ws_show_ingredients(drink):
+    
+    print "ws_show_ingredients, args=%s" % str(request.args)
+    
+    recipe = {}
+    for arg in request.args:
+        recipe[arg] = int(request.args.get(arg))
+
+    return ws_show_drink_ingredients(drink, recipe)

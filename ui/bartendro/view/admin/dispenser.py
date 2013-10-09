@@ -30,10 +30,12 @@ def dispenser():
     booze_list = [(b.id, b.name) for b in boozes]
     sorted_booze_list = sorted(booze_list, key=itemgetter(1))
 
+    sorted_booze_list.append( ( 0, "None" ) )
+
     if app.options.use_liquid_level_sensors:
-        states = [dispenser.out for dispenser in dispensers]
+        states = [ ( dispenser.out if dispenser.id < 8 else 3 ) for dispenser in dispensers]
     else:
-        states = [0 for dispenser in dispensers]
+        states = [ ( dispenser.out if dispenser.id < 8 else 3 ) for dispenser in dispensers]
 
     kwargs = {}
     fields = []

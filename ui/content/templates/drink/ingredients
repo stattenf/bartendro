@@ -1,0 +1,136 @@
+{% extends 'layout' %}
+{% block body %}
+<div class="drink-content">
+  <div class="drink-heading">To finish: {{ drink.name.name }}</div>
+  <div class="row-fluid">
+      <div class="span5">
+          <div class="dispense-drink-detail">
+             <div class="pour-desc">
+                {{ drink.desc }}
+             </div>
+
+
+             <h3>ingredients:</h3>
+             <div class="pour-ing">
+                <table class="ing-table">
+
+{% for ing in ingredients %}
+    <tr>
+       <td>{{ ing.name.name }}</td>
+       <td>{{ ing.ml }}ml</td>
+    </tr>
+{% endfor %}
+
+
+                  {% for ing in drink.ingredients %}
+                      <tr>
+                         <td id="booze_name{{ ing.id }}">{{ ing.name }}</td>
+                         <td id="booze{{ ing.id }}" style="text-align: right"></td>
+                         <td id="booze_unit{{ ing.id }}"></td>
+                      </tr>
+                  {% endfor %}
+                </table>
+             </div>
+          </div>
+      </div>
+      <div class="span7">
+          <div class="dispense-stack">
+
+              <table class="dispense-buttons">
+              <tr>
+                <td class="dispense-buttons-right"><a class="btn btn-large btn-warning dispense-button button-border" onclick="back()">Done</a></td>
+              </tr>
+              </table>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+<script type="text/javascript" src="/static/js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery-ui-1.10.3.custom.min.js"></script>
+<script type="text/javascript">
+
+$(document).ready(function() 
+{
+    if ({{ options.metric }})
+    {
+        unit_name = "milliliters"
+        unit_name_short = "ml"
+    }
+    else
+    {
+        unit_name = "fluid ounces"
+        unit_name_short = "fl oz"
+    }
+
+    $("#size_text").text(drink_size + " " + unit_name);
+});
+
+function back()
+{
+    window.location = "/";
+}
+
+function show_dialog(title, text)
+{
+    $("#log-in-required-dialog").dialog({ buttons: [ { text: "Ok", click: function() { $( this ).dialog( "close" ); } } ] });
+}
+
+function make_drink(drink, is_taster)
+{
+        for(i = 0; i < ing.length; i++)
+        {
+            if (i == 0)
+                args = "?";
+            else 
+                args += "&";
+            args += "booze" + ing[i].id + "=";
+            volume = is_taster ? ing[i].taster_volume.toFixed(0) : ing[i].volume.toFixed(0);
+            args += volume;
+        }
+        lb = '<div class="lb-box"><h1>';
+        url = "/ws/drink/" + drink;
+        if (is_taster)
+        {
+            if ({{ options.taster_size }} < 20)
+                url += "/speed/128";
+            lb += 'Now serving a taste of'
+        }
+        else
+            lb += 'Now serving your'
+        lb += '</h1><div class="lb-drink">{{ drink.name.name }}</div>';
+        lb += "</div>";
+        $.modal(lb, { 'escClose' : false });
+        $.ajax({
+                url: url + args,
+                success: function(html)
+                {
+                    if (is_taster)
+                        $.modal.close();
+                    else
+                        window.location = "/";
+                },
+                error: function(xmlhttp, textStatus, error)
+                {
+                    $.modal.close();
+                    if (xmlhttp.status == 500)
+                        $("#error-state--dialog").dialog({ buttons: [ { text: "Ok", click: function() { $( this ).dialog( "close"); window.location = "/"; } } ] });
+                    else
+                    if (xmlhttp.status == 503)
+                        $("#busy-dialog").dialog({ buttons: [ { text: "Ok", click: function() { $( this ).dialog( "close" ); } } ] });
+                    else
+                    if (xmlhttp.status == 400)
+                        $("#cant-make-dialog").dialog({ buttons: [ { text: "Ok", click: function() { $( this ).dialog( "close" ); window.location = "/"; } } ] });
+                    else
+                        $("#error-dialog").dialog({ buttons: [ { text: "Ok", click: function() { $( this ).dialog( "close" ); window.location = "/"; } } ] });
+                }
+        });
+}
+
+function close_modal() {
+    $.modal.close();
+}
+</script>
+<script type="text/javascript" src="/static/js/jquery.simplemodal.1.4.4.min.js"></script>
+{% endblock %}

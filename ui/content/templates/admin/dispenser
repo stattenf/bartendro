@@ -28,8 +28,10 @@
                         <div style="padding-bottom: 10px">
                             {% if states[i-1] == 1 %}
                                   {{ form["dispenser%s" % i].label(class="dispenser-out")}}: 
-                            {% elif states[i-1] == 2 %}
-                                  {{ form["dispenser%s" % i].label(class="dispenser-warning")}}: 
+	                            {% elif states[i-1] == 2 %}
+	                                  {{ form["dispenser%s" % i].label(class="dispenser-warning")}}: 
+		                        {% elif states[i-1] == 3 %}
+		                              {{ form["dispenser%s" % i].label(class="dispenser-offline")}}: 
                             {% else %}
                                   {{ form["dispenser%s" % i].label(class="dispenser-ok")}}: 
                             {% endif %}

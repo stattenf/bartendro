@@ -306,6 +306,11 @@ table {
     color: orange;
 }
 
+.dispenser-offline {
+    display: inline;
+    color: gray;
+}
+
 .dispenser-ok {
     display: inline;
 }

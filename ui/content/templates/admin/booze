@@ -31,6 +31,12 @@
              {% if form.type.errors %}
                  <ul class="errors">{% for error in form.type.errors %}<li>{{ error }}</li>{% endfor %}</ul>
              {% endif %}
+
+             <div>{{ form.offline.label }}{{ form.offline(class="form-element") }}</div>
+             {% if form.offline.errors %}
+                 <ul class="errors">{% for error in form.offline.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+             {% endif %}
+
              {{ form.id() }}
              <div style="margin-top: 20px">
                  {{ form.save(class="btn btn-large btn-primary submit-button") }}

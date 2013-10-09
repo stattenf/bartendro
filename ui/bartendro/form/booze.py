@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from wtforms import Form, TextField, DecimalField, HiddenField, validators, \
+from wtforms import Form, BooleanField, TextField, DecimalField, HiddenField, validators, \
                           TextAreaField, SubmitField, SelectField
 from bartendro.model import booze
 
@@ -12,6 +12,7 @@ class BoozeForm(Form):
     type = SelectField(u"Type", [validators.NumberRange(0, len(booze.booze_types))], 
                                 choices=booze.booze_types,
                                 coerce=int)
+    offline = BooleanField(u"Available at bar", default=0)
     save = SubmitField(u"save")
     cancel = SubmitField(u"cancel")
 
