@@ -20,33 +20,48 @@ class Drink(db.Model):
     sugg_size = Column(Integer)
     popular = Column(Boolean)
     available = Column(Boolean)
-
+    requiresOfflineIngredients = True
+    
     query = db.session.query_property()
 
     def __init__(self, desc = u'', data = None, size = DEFAULT_SUGGESTED_DRINK_SIZE, popular = False, available = True):
         self.name = DrinkName()
         if data: 
             self.update(data)
+            self.requiresOfflineIngredients = self.hasOfflineIngredients()
             return
         self.desc = desc
         self.size = size
         self.popular = popular
         self.available = available
         self.sugg_size = 0
+        
         db.session.add(self)
+    
+    def hasOfflineIngredients(self):
+        result = False
+        
+        boozes = db.session.query("booze_id").from_statement("SELECT booze_id FROM drink_booze db WHERE db.drink_id = :d" ).params( d = self.id ).all()
+        offline_boozes = db.session.query("id").from_statement("""SELECT bg.id FROM booze bg WHERE bg.offline > 0""").all()
+
+        result = len(filter( lambda x:x in boozes, offline_boozes )) > 0
+
+        return result
     
     def process_ingredients(self):
         ing = []
+
+        self.requiresOfflineIngredients = self.hasOfflineIngredients()
 
         self.drink_boozes = sorted(self.drink_boozes, key=attrgetter('booze.abv', 'booze.name'), reverse=True)
         for db in self.drink_boozes:
             ing.append({ 'name' : db.booze.name, 
                          'id' : db.booze.id, 
                          'parts' : db.value, 
-                         'type' : db.booze.type 
+                         'type' : db.booze.type
                        })
         self.ingredients = ing
 
     def __repr__(self):
-        return "<Drink>(%d,%s,%s,%s)>" % (self.id or -1, self.name.name, self.desc, " ".join(["<DrinkBooze>(%d)" % (db.id or -1) for db in self.drink_boozes]))
+        return "<Drink>(id=%d,%s,%s,%s)>" % (self.id or -1, self.name.name, self.desc, " ".join(["<DrinkBooze>(%d)" % (db.id or -1) for db in self.drink_boozes]))
 

@@ -64,7 +64,7 @@ $(document).ready(function()
         unit_name_short = "fl oz"
     }
 
-    $("#size_text").text(drink_size + " " + unit_name);
+    /* $("#size_text").text(drink_size + " " + unit_name); */
 });
 
 function back()

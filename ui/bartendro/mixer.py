@@ -180,7 +180,7 @@ class Mixer(object):
         level = self.driver.get_liquid_level(dispenser)
         log.info("motor stopped at level: %d" % level)
 
-    def get_available_drink_list(self):
+    def get_available_drink_list(self, offlineDrinks = 0 ):
         if self.get_state() == STATE_ERROR:
             return []
 
@@ -196,9 +196,6 @@ class Mixer(object):
                                                          FROM booze_group_booze bgb, dispenser 
                                                         WHERE bgb.booze_id = dispenser.booze_id)""")
 
-        offline_boozes = db.session.query("id") \
-                                .from_statement("""SELECT bg.id FROM booze bg WHERE bg.offline > 0""")
-
         if app.options.use_liquid_level_sensors: 
             sql = "SELECT booze_id FROM dispenser WHERE out == 0 ORDER BY id LIMIT :d"
         else:
@@ -208,7 +205,11 @@ class Mixer(object):
                         .from_statement(sql) \
                         .params(d=self.disp_count).all()
         boozes.extend(add_boozes)
-        boozes.extend(offline_boozes)
+ 
+        offline_boozes = db.session.query("id").from_statement("""SELECT bg.id FROM booze bg WHERE bg.offline > 0""").all()
+        
+        if offline_boozes:
+                boozes.extend(offline_boozes)
         
         booze_dict = {}
         for booze_id in boozes:
@@ -223,16 +224,17 @@ class Mixer(object):
         for drink_id, booze_id in drinks:
             if last_drink < 0: last_drink = drink_id
             if drink_id != last_drink:
-                if self.can_make_drink(boozes, booze_dict): 
+                if self.can_make_drink(boozes, booze_dict):
                     can_make.append(last_drink)
                 boozes = []
             boozes.append(booze_id)
             last_drink = drink_id
 
-        if self.can_make_drink(boozes, booze_dict): 
+        if self.can_make_drink(boozes, booze_dict):            
             can_make.append(last_drink)
 
         self.mc.set("available_drink_list", can_make)
+        
         return can_make
 
     def wait_til_finished_dispensing(self, disp):
@@ -316,9 +318,7 @@ class Mixer(object):
 
     def get_ingredients_for_drink( self, id, recipe_arg ):
         results = [ ]
-        
-        print "show_ingredients, id=%d args=%s" % ( id, recipe_arg )
-        
+                
         drink = Drink.query.filter_by(id=int(id)).first()
         print( "recipe_arg = %s" % str( recipe_arg ) )
 
@@ -332,8 +332,6 @@ class Mixer(object):
             r['name'] = self.get_booze_name( booze_id )
 
             results.append( r )
-
-        print "get_ingredients, results=%s for recipe=%s" % ( results, recipe_arg )
 
         return results
         
@@ -439,7 +437,6 @@ class Mixer(object):
             print "There are offline ingredients %s" % offlineIngredients
 
             newURL = "REDIRECT /ws/showingredients/" + str(id) + "?" + '&'.join( [ "booze%d=%d" % ( i[ 'booze' ], i[ 'ml' ] ) for i in offlineIngredients ] )
-            print "n=%s" % newURL
 
         dlog = drink_log.DrinkLog(drink.id, t, size)
         db.session.add(dlog)

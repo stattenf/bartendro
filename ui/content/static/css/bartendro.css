@@ -229,6 +229,13 @@ h3 {
     padding-left: 20px;
 }
 
+.drink-btn-needs-ingredients {
+    color: blue;
+    font-size: 15pt;
+    text-align: left;
+    padding-left: 20px;
+}
+
 .drink-plus-minus {
     font-size: 25pt;
     font-weight: bold;

@@ -1,7 +1,7 @@
 {% extends 'layout' %}
 {% block body %}
 <div id="scroll-pane">
-    {% if top_drinks or other_drinks %}
+    {% if top_drinks or other_drinks or drinks_1 or drinks_2 %}
         <div class="row-fluid">
            <div class="span6">
                 <span class="trending-drinks"><a href="/trending">What's popular now?</a></span>
@@ -9,6 +9,7 @@
            </div>
         </div>
         {{ drink_table(top_drinks) }}
+                
         <div style="clear: both"/>
         <h1>the wild side</h1>
         {{ drink_table(other_drinks) }}
@@ -68,8 +69,12 @@ $(document).ready(function() {
          <div class="row-fluid">
       {% endif %}
       <div class="span6 menuitem">
-         <a class="btn btn-large btn-warning btn-block drink-btn button-border" style="margin-bottom: 8px;" 
-                type="button" href="/drink/{{ drink.id }}">{{ drink.name.name }}</a>
+         <a class="btn btn-large btn-warning btn-block drink-btn{% if drink.requiresOfflineIngredients %}-needs-ingredients{% endif %} drink-btn button-border"
+                type="button" href="/drink/{{ drink.id }}"
+                
+                 style="margin-bottom: 8px;">
+                {{ drink.name.name }}
+                </a>
          <div class="ingredients">
             {% for ing in drink.ingredients %}
                {{ ing.name }}{% if not loop.last %}, {% endif %}

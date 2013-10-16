@@ -36,9 +36,6 @@ def ws_show_drink_ingredients( drink_id, recipe ):
     drinkName=app.mixer.get_drink_name(drink_id)
 
     # Step thru each booze in the recipe, and create an entry for it
-    print "recipe=%s" % str(recipe)
-    print "drink=%s" % str(drinkName)
-
     ingredients = []
     for i in recipe:
         booze = app.mixer.get_booze_name( int(i[5:]) )

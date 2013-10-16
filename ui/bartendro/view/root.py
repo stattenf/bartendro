@@ -41,6 +41,8 @@ def index():
         return render_template("index", 
                                top_drinks=[], 
                                other_drinks=[],
+                               drinks_1=app.mixer.get_available_drink_list(1),
+                               drinks_2=app.mixer.get_available_drink_list(2),                               
                                error_message="Bartendro database errror.<br/><br/>There doesn't seem to be a valid database installed.",
                                title="Bartendro error")
         
@@ -63,6 +65,7 @@ def index():
                         .filter(Drink.popular == 1)  \
                         .filter(Drink.available == 1)  \
                         .order_by(asc(func.lower(DrinkName.name))).all() 
+          
     top_drinks = filter_drink_list(can_make_dict, top_drinks)
     process_ingredients(top_drinks)
 
