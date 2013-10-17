@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+import shutil
+from subprocess import call
+from bartendro.model.version import DatabaseVersion
+import os, sys
+from bartendro import db
 
 # The states that Bartendro can be in:
 STATE_INIT  = 0   # Bartendro is initializing
@@ -17,9 +22,24 @@ class BartendroGlobalLock(object):
     '''This class manages the few global settings that Bartendro needs including a global state and
        a global Bartendro lock to prevent concurrent access to the hardware'''
 
-
     def __init__(self):
         self.state = STATE_INIT
+        
+        ver = DatabaseVersion.query.one()
+        
+        if ( ver.schema < 2 ):
+            print "UPDATING bartendro.db version to 2 from %d" % ver.schema
+            
+            db.session.bind.dispose()
+            
+            print "Backing up bartendro.db"
+            shutil.copyfile("bartendro.db","bartendro.db.bak")
+            call( ["sqlite3","bartendro.db", "alter table booze ADD offline INTEGER DEFAULT 0" ])
+            call( ["sqlite3", "bartendro.db", "update version set schema=2 where schema=1"])
+            
+            # Re-execute bartendro_server, so that we start with the new database file
+            os.execl(sys.executable, sys.executable, sys.argv[0], *sys.argv[1:])
+                    
 
     def lock_bartendro(self):
         """Call this function before making a drink or doing anything that where two users' action may conflict.

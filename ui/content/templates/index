@@ -82,9 +82,7 @@ $(document).ready(function() {
                 {% else %}
                 <span class="ingredient">
                 {% endif %}
-               {{ ing.name }}
-               </span>
-               {% if not loop.last %}, {% endif %}
+               {{ing.name}}{% if not loop.last %}, {% endif %}</span>
             {% endfor %}
          </div>
          <div>{{ drink.desc }}</div>
