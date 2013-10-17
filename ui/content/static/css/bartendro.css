@@ -218,6 +218,14 @@ h3 {
     margin-bottom: 8px;
 }
 
+.ingredient {
+    
+}
+
+.ingredient-offline {
+    color: blue;
+}
+
 .button-border {
     border-width: 2px;
     border-color: #4788BF;

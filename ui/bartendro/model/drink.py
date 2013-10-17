@@ -51,14 +51,23 @@ class Drink(db.Model):
     def process_ingredients(self):
         ing = []
 
-        self.requiresOfflineIngredients = self.hasOfflineIngredients()
+        offline_boozes = set()
+        for i in db.session.query("id").from_statement("""SELECT bg.id FROM booze bg WHERE bg.offline > 0""").all():
+            offline_boozes.add( i[0] )
+        print "offline_boozes=%s" % str(offline_boozes)
+
+        self.requiresOfflineIngredients = False
 
         self.drink_boozes = sorted(self.drink_boozes, key=attrgetter('booze.abv', 'booze.name'), reverse=True)
-        for db in self.drink_boozes:
-            ing.append({ 'name' : db.booze.name, 
-                         'id' : db.booze.id, 
-                         'parts' : db.value, 
-                         'type' : db.booze.type
+        for drinkBooze in self.drink_boozes:
+            print "drinkBooze=%s" % str(drinkBooze)
+            offline = drinkBooze.booze.id in offline_boozes
+            self.requiresOfflineIngredients = self.requiresOfflineIngredients or offline
+            ing.append({ 'name' : drinkBooze.booze.name, 
+                         'id' : drinkBooze.booze.id, 
+                         'parts' : drinkBooze.value, 
+                         'type' : drinkBooze.booze.type,
+                         'offline': offline
                        })
         self.ingredients = ing
 

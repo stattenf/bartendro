@@ -77,7 +77,14 @@ $(document).ready(function() {
                 </a>
          <div class="ingredients">
             {% for ing in drink.ingredients %}
-               {{ ing.name }}{% if not loop.last %}, {% endif %}
+                {% if ing.offline %}
+                <span class="ingredient-offline">
+                {% else %}
+                <span class="ingredient">
+                {% endif %}
+               {{ ing.name }}
+               </span>
+               {% if not loop.last %}, {% endif %}
             {% endfor %}
          </div>
          <div>{{ drink.desc }}</div>
