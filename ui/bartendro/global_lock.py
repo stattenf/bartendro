@@ -35,11 +35,23 @@ class BartendroGlobalLock(object):
             print "Backing up bartendro.db"
             shutil.copyfile("bartendro.db","bartendro.db.bak")
             call( ["sqlite3","bartendro.db", "alter table booze ADD offline INTEGER DEFAULT 0" ])
-            call( ["sqlite3", "bartendro.db", "update version set schema=2 where schema=1"])
+            call( ["sqlite3", "bartendro.db", "update version set schema=2 where schema < 2"])
             
             # Re-execute bartendro_server, so that we start with the new database file
             os.execl(sys.executable, sys.executable, sys.argv[0], *sys.argv[1:])
-                    
+
+        if ( ver.schema < 3 ):
+            print "UPDATING bartendro.db version to 3 from %d" % ver.schema
+            
+            db.session.bind.dispose()
+            
+            print "Backing up bartendro.db"
+            shutil.copyfile("bartendro.db","bartendro.db.bak")
+            call( ["sqlite3","bartendro.db", "alter table booze ADD shotworthy INTEGER DEFAULT 0" ])
+            call( ["sqlite3", "bartendro.db", "update version set schema=3 where schema < 3"])
+            
+            # Re-execute bartendro_server, so that we start with the new database file
+            os.execl(sys.executable, sys.executable, sys.argv[0], *sys.argv[1:])
 
     def lock_bartendro(self):
         """Call this function before making a drink or doing anything that where two users' action may conflict.
