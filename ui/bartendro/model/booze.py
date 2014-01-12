@@ -28,12 +28,13 @@ class Booze(db.Model):
     abv = Column(Integer, default=0)
     type = Column(Integer, default=0)
     offline = Column(Integer, default=0)
+    shotworthy = Column(Integer, default=0)
 
     # add unique constraint for name
     UniqueConstraint('name', name='booze_name_undx')
  
     query = db.session.query_property()
-    def __init__(self, name = u'', brand = u'', desc = u'', abv = 0, type = 0, out = 0, offline = 0, data = None):
+    def __init__(self, name = u'', brand = u'', desc = u'', abv = 0, type = 0, out = 0, offline = 0, shotworthy = 0, data = None):
         if data: 
             self.update(data)
             return
@@ -52,11 +53,12 @@ class Booze(db.Model):
         self.abv = int(data['abv'])
         self.type = int(data['type'])
         self.offline = int(data['offline']) != 0
-
+        self.shotworthy = int(data['shotworthy']) != 0
+        
     def is_abstract(self):
         return len(self.booze_group)
 
     def __repr__(self):
-        return "<Booze('%s','%s')>" % (self.id, self.name)
+        return "<Booze('%s','%s' '%s' %d proof '%s'/%d/%d')>" % (self.id, self.name, self.brand, self.abv, self.desc, self.offline, self.shotworthy )
 
 Index('booze_name_ndx', Booze.name)

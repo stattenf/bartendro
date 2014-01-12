@@ -60,9 +60,8 @@ class Drink(db.Model):
 
         self.drink_boozes = sorted(self.drink_boozes, key=attrgetter('booze.abv', 'booze.name'), reverse=True)
         for drinkBooze in self.drink_boozes:
-            print "drinkBooze=%s" % str(drinkBooze)
             offline = drinkBooze.booze.id in offline_boozes
-            self.requiresOfflineIngredients = self.requiresOfflineIngredients or offline
+            self.requiresOfflineIngredients = offline or self.requiresOfflineIngredients
             ing.append({ 'name' : drinkBooze.booze.name, 
                          'id' : drinkBooze.booze.id, 
                          'parts' : drinkBooze.value, 
@@ -72,5 +71,5 @@ class Drink(db.Model):
         self.ingredients = ing
 
     def __repr__(self):
-        return "<Drink>(id=%d,%s,%s,%s)>" % (self.id or -1, self.name.name, self.desc, " ".join(["<DrinkBooze>(%d)" % (db.id or -1) for db in self.drink_boozes]))
+        return "<Drink>(id=%d,%s,%s,%s reqOffline=%d)>" % (self.id or -1, self.name.name, self.desc, " ".join(["<DrinkBooze>(%d)" % (db.id or -1) for db in self.drink_boozes]), self.requiresOfflineIngredients )
 

@@ -13,7 +13,13 @@
                 <table class="ing-table">
                   {% for ing in drink.ingredients %}
                       <tr>
+                          {% if ing.offline %}
+                          <span class="ingredient-offline">
+                          {% else %}
+                          <span class="ingredient">
+                          {% endif %}
                          <td id="booze_name{{ ing.id }}">{{ ing.name }}</td>
+                         </span>
                          <td id="booze{{ ing.id }}" style="text-align: right"></td>
                          <td id="booze_unit{{ ing.id }}"></td>
                       </tr>

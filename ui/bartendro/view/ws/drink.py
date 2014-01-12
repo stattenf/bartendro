@@ -173,6 +173,7 @@ def ws_drink_save(drink):
 
 @app.route('/ws/shotbot/<int:disp>')
 def ws_shotbot(disp):
+    print "ws_shotbot(), disp=%d" % disp
     if app.options.must_login_to_dispense and not current_user.is_authenticated():
         return "login required"
 
@@ -180,9 +181,13 @@ def ws_shotbot(disp):
         return "error state"
 
     dispenser = db.session.query(Dispenser).filter_by(id=disp).first()
+    
+    print "dispenser=%s" % str(dispenser)
+    
     try:
         is_cs, err = app.mixer.dispense_ml(disp - 1, app.options.shot_size, dispenser.booze.id)
         if is_cs:
+            print "error state"
             app.mixer.set_state(STATE_ERROR)
             return "error state"
         if err:
@@ -190,6 +195,7 @@ def ws_shotbot(disp):
             log.error(err)
             return err
     except mixer.BartendroBusyError:
+        print "busy"
         return "busy"
 
     return ""

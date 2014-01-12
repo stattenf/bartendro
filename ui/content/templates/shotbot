@@ -17,7 +17,7 @@
       {% for i in range(0, count) %}
           <div class="row-fluid">
               <div class="span6">
-                 <button class="btn btn-warning button-border shotbot-button" onclick="make_shot({{i}})">{{ dispensers[i].booze.name }}</button>
+                 <button class="btn btn-warning button-border shotbot-button" onclick="make_shot({{i+1}})">{{ dispensers[i].booze.name }}</button>
               </div>
               <div class="span6 shotbot-text">
                  {{ dispensers[i].booze.desc }} 
@@ -39,7 +39,7 @@
 function make_shot(disp)
 {
      $.ajax({ 
-            url: "/ws/shotbot/" + (disp+1),
+            url: "/ws/shotbot/" + (disp),
             success: function(html)
             {
                 if (html == "login required")

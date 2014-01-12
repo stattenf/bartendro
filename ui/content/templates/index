@@ -27,6 +27,12 @@
            <div class="span12" style="text-align: center"><a href="/trending">What was popular before Bartendro broke?</a></div>
         </div>
     {% endif %}
+    
+    <h3>Shots</h3>
+    {{ shot_table(shots) }}
+        
+    <h3>Options</h3>
+    {{ options_table(opts) }}
 </div>
 <div>
 <a href="/admin" style="color: #Fafafa">admin</a>
@@ -38,6 +44,8 @@ var isCtrl = false;
 var isShift = false;
  
 $(document).ready(function() {
+  load();
+
     // action on key up
     $(document).keyup(function(e) {
         if(e.which == 17) {
@@ -61,6 +69,75 @@ $(document).ready(function() {
     });
      
 });
+
+function load()
+{
+    $.ajax({
+            url: "/ws/options",
+            dataType : "json",
+            success: function(json)
+            {
+                set_options(json['options']);
+            },
+            error: function(xhr, txtStatus, errorThrown)
+            {
+                set_message("Failed to load options:" + xhr.status);
+            }
+    });
+}
+
+function set_options(opts)
+{
+    if (opts['use-offline-ingredients'])
+        $("#option-use-offline-ingredients").prop("checked", true);
+    else
+        $("#option-use-offline-ingredients").prop("checked", false);
+
+}
+
+function save()
+{
+    // if (!$("#options-form").valid())
+    //    return;
+
+    options = {};
+    options['use-offline-ingredients'] = $("#option-use-offline-ingredients").prop("checked") ? 1 : 0;
+
+    j = {}
+    j['options'] = options;
+
+    $.ajax({
+            url: "/ws/options",
+            type: "POST",
+            data : JSON.stringify(j),
+            dataType : "json",
+            contentType: "application/json; charset=utf-8",
+            success: function(json)
+            {
+            },
+            error: function(xhr, txtStatus, errorThrown)
+            {
+            }
+    });
+}
+
+function make_shot(disp)
+{
+     $.ajax({ 
+            url: "/ws/shotbot/" + (disp),
+            success: function(html)
+            {
+                if (html == "login required")
+                    $("#log-in-required-dialog").dialog({ buttons: [ { text: "Ok", click: function() { $( this ).dialog( "close" ); } } ] });
+            },
+            error: function(xhr, txtStatus, errorThrown)
+            {
+                alert("Failed to dispense shot. Status:" + xhr.status);
+            }
+     });
+}
+
+
 </script>
 {% endblock %}
 {% macro drink_table(drinks) -%}
@@ -99,3 +176,39 @@ $(document).ready(function() {
        </div>
     {% endif %}
 {% endmacro %}
+
+{% macro shot_table(shots) -%}
+    {% for drink in shots %}
+      {% if (loop.index0 % 2) == 0 %}
+         <div class="row-fluid">
+      {% endif %}
+      <div class="span6 menuitem">
+         <a class="btn btn-large btn-warning btn-block shotbot-button button-border" type="button"  
+            onclick="make_shot({{drink.dispenser}})"  style="margin-bottom: 8px;">
+                Shot of {{drink.brand}}{{ drink.name }}
+                </a>
+         <div>{{ drink.desc }}</div>
+      </div>
+      {% if (loop.index0 % 2) == 1 %}
+         </div> 
+      {% endif %}
+    {% else %}
+        <div>No shots from this section can currently be made.</div>
+    {% endfor %}
+    {% if (shots|count % 2 == 1) %}
+       <div class="row-fluid">
+          <div class="span6">&nbsp;</div>
+       </div>
+    {% endif %}
+
+{% endmacro %}
+
+{% macro options_table(opts) -%}
+  <div style="margin-left: 15px">
+  <div>
+    <label for="option-use-offline-ingredients" class="checkbox">
+         <input id="option-use-offline-ingredients" name="option-use-offline-ingredients" type="checkbox" onclick="save()"></input>
+          Include drinks that include offline ingredients.
+     </label>
+  </div>
+  {% endmacro %}

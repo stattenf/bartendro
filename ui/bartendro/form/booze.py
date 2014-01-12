@@ -13,6 +13,8 @@ class BoozeForm(Form):
                                 choices=booze.booze_types,
                                 coerce=int)
     offline = BooleanField(u"Available at bar", default=0)
+    shotworthy = BooleanField(u"Include as single shot drink", default=0)
+    
     save = SubmitField(u"save")
     cancel = SubmitField(u"cancel")
 

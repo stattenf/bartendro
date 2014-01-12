@@ -40,8 +40,11 @@ def drink(id):
         if booze.type == BOOZE_TYPE_SWEET: has_sweet = True
         if booze.type == BOOZE_TYPE_TART: has_tart = True
 
+    print "drink=%s" % str(drink)
+
     show_sweet_tart = has_sweet and has_tart
     show_strength = has_alcohol and has_non_alcohol
+    show_taster = app.options.show_taster and not drink.requiresOfflineIngredients
 
     if not custom_drink:
         return render_template("drink/index", 
@@ -51,7 +54,8 @@ def drink(id):
                                is_custom=0,
                                show_sweet_tart=show_sweet_tart,
                                show_sobriety=show_sobriety,
-                               can_change_strength=show_strength)
+                               can_change_strength=show_strength,
+                               show_taster=show_taster)
 
     dispensers = db.session.query(Dispenser).all()
     disp_boozes = {}
@@ -82,7 +86,7 @@ def drink(id):
                            booze_group=booze_group,
                            show_sweet_tart=show_sweet_tart,
                            show_sobriety=show_sobriety,
-                           can_change_strength=show_strength)
+                           can_change_strength=show_strength,show_taster=show_taster)
 
 @app.route('/drink/sobriety')
 def drink_sobriety():

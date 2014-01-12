@@ -324,14 +324,7 @@ class Mixer(object):
 
         for booze in recipe_arg:
             booze_id = int(booze[5:])
-        
-            r = {}
-                                    
-            r['booze'] = booze_id
-            r['ml'] = recipe_arg[booze]
-            r['name'] = self.get_booze_name( booze_id )
-
-            results.append( r )
+            results.append( { 'name':self.get_booze_name( booze_id ), 'booze': booze_id, 'ml':recipe_arg[booze] } )
 
         return results
         

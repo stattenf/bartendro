@@ -8,6 +8,8 @@ from flask import Flask, request, render_template
 from bartendro.model.dispenser import Dispenser
 from bartendro.model.drink import Drink
 from bartendro.model.drink_name import DrinkName
+from bartendro.model.booze import Booze
+
 
 def process_ingredients(drinks):
     for drink in drinks:
@@ -77,10 +79,21 @@ def index():
                         .order_by(asc(func.lower(DrinkName.name))).all() 
     other_drinks = filter_drink_list(can_make_dict, other_drinks)
     process_ingredients(other_drinks)
+    
+    shots = []
+    for s in db.session.query(Booze).filter(Booze.shotworthy != 0 ).order_by(asc(func.lower(Booze.name))).all():
+        print "s=%s" % str(s)
+        dispenser = app.mixer.find_dispenser( s.id )
+        if dispenser != None:
+            shots.append( { 'name': s.name, 'desc': s.desc, 'dispenser':dispenser.id, 'dispenser_actual': dispenser.actual  })
+    print "shots=%s" % str(shots)
+    
             
     return render_template("index", 
                            top_drinks=top_drinks, 
                            other_drinks=other_drinks,
+                           shots=shots,
+                           includeOfflineCheckbox=True,
                            title="Bartendro")
 
 def shotbot():
